@@ -1,0 +1,5 @@
+name = Block Frame
+description = Expose any block as a page for use in iframes
+core = 7.x
+php = 5.5
+dependencies[] = block
