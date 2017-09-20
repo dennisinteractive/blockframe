@@ -5,14 +5,13 @@
  * Contains blockframe.module.
  */
 
-
 /**
  * hook_page_alter().
  */
 
 function blockframe_page_alter(&$page) {
   // Only for block requests.
-  if(_blockframe_is_block_request()) {
+  if (_blockframe_is_block_request()) {
     // Grab out block
     $block = _blockframe_get_block_request();
 
@@ -27,17 +26,17 @@ function blockframe_page_alter(&$page) {
 
 function blockframe_js_alter(&$javascript) {
   // Only for block requests.
-  if(_blockframe_is_block_request()) {
+  if (_blockframe_is_block_request()) {
     $blacklist = array(
       'impliedConsent'
     );
 
     // Unsetting JS we definately won't need.
-    foreach($javascript as $key => $value) {
-      foreach($blacklist as $filter) {
+    foreach ($javascript as $key => $value) {
+      foreach ($blacklist as $filter) {
         // Either by exact path or a contained value for inline scripts.
-        if(is_string($value['data'])){
-          if($javascript[$key] == $filter || is_int(strpos($value['data'], $filter))) {
+        if (is_string($value['data'])) {
+          if ($javascript[$key] == $filter || is_int(strpos($value['data'], $filter))) {
             unset($javascript[$key]);
           }
         }
@@ -51,14 +50,12 @@ function blockframe_js_alter(&$javascript) {
  */
 
 function blockframe_theme($existing, $type, $theme, $path) {
-  // if (_blockframe_is_block_request()) {
-    //$path = drupal_get_path('module', 'blockframe');
-    $themes['page__type__iframe'] = array(
-      'template' => 'page--type--iframe',
-      'path' => $path . '/templates',
-    );
-    return $themes;
-  // }
+  $themes['page__type__iframe'] = array(
+    'template' => 'page--type--iframe',
+    'path' => $path . '/templates',
+  );
+
+  return $themes;
 }
 
 /**
@@ -66,13 +63,13 @@ function blockframe_theme($existing, $type, $theme, $path) {
  */
 
 function blockframe_preprocess_page(&$vars, $hook) {
-  //Add a static template suggestion only for block requests. 
+  //Add a static template suggestion only for block requests.
   if (_blockframe_is_block_request()) {
     $vars['theme_hook_suggestions'][] = "page__type__iframe";
   }
-}    
+}
 
- /**
+/**
  * Determines whether a request should return a blockframe.
  */
 function _blockframe_is_block_request() {
@@ -90,7 +87,7 @@ function _blockframe_is_block_request() {
   return $result;
 }
 
- /**
+/**
  * Healper function to (hopefully) grab the block in a clean way.
  */
 function _blockframe_get_block_request() {
@@ -104,11 +101,11 @@ function _blockframe_get_block_request() {
     $query = $_GET['destination'];
     $params = explode('/', $query);
 
-    if($params[0] == 'block') {
+    if ($params[0] == 'block') {
       $block = block_load($params[1], $params[2]);
-      
+
       // Only if it's a real block proceed
-      if(isset($block->bid)) {
+      if (isset($block->bid)) {
         // For some reason the readable block id is dropped. TODO: Figure out why I have to do this.
         $block->bid = $params[1] . "-" . $params[2];
         $block_render = _block_get_renderable_array(_block_render_blocks(array($block)));
