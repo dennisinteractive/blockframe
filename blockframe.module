@@ -8,15 +8,9 @@
 /**
  * hook_page_alter().
  */
-
 function blockframe_page_alter(&$page) {
-  // Only for block requests.
   if (_blockframe_is_blockframe_request()) {
-    // Grab out block
-    $block = _blockframe_get_block_request();
-
-    // Replace just the content as every other region is ditched in the custom TPL
-    $page['content'] = $block;
+    $page['content'] = _blockframe_get_block();
   }
 }
 
@@ -71,51 +65,59 @@ function blockframe_preprocess_page(&$vars, $hook) {
 
 /**
  * Determines whether a request should return a blockframe.
+ *
+ * @return boolean
+ *    True if it is a blockframe request. Otherwise NULL.
  */
 function _blockframe_is_blockframe_request() {
-  // Get the query string.
-  $query_string = drupal_get_query_parameters();
-
-  // Check if there is a destination.
-  if (!isset($query_string['destination'])) {
-    return;
-  }
-
-  // Check if the destination should be resolved by this module.
-  $destination = $query_string['destination'];
-  if (substr($destination, 0, 11) == 'blockframe/' && _blockframe_get_block_request()) {
+  $destination = _blockframe_get_destination();
+  if (substr($destination, 0, 11) == 'blockframe/') {
     return TRUE;
   }
 }
 
 /**
- * Helper function to (hopefully) grab the block in a clean way.
+ * Gets the iframe destination.
+ *
+ * @return string
+ *    The destination.
  */
-function _blockframe_get_block_request() {
-  $markup = &drupal_static(__FUNCTION__);
-  // Run only if it hasn't been fetched before
-  if (!isset($markup) && isset($_GET['destination'])) {
-    $markup = FALSE;
-//var_dump($_GET);
+function _blockframe_get_destination() {
+  // Get the query string.
+  $query_string = drupal_get_query_parameters();
+  if (!isset($query_string['destination'])) {
+    return '';
+  }
 
-    // Grab the URL and try to load a block
-    $query = $_GET['destination'];
-    $params = explode('/', $query);
+  return check_plain($query_string['destination']);
+}
 
-    if ($params[0] == 'block') {
-      $block = block_load($params[1], $params[2]);
+/**
+ * Helper function to (hopefully) grab the block in a clean way.
+ *
+ * @param array $args
+ *   The destination url containing the information about the block
+ *
+ * @return mixed
+ *   Rendereable array for the block requested.
+ *   Null if the block cannot be found.
+ */
+function _blockframe_get_block() {
+  static $result;
 
-      // Only if it's a real block proceed
-      if (isset($block->bid)) {
-        // For some reason the readable block id is dropped. TODO: Figure out why I have to do this.
-        $block->bid = $params[1] . "-" . $params[2];
-        $block_render = _block_get_renderable_array(_block_render_blocks(array($block)));
+  $destination = _blockframe_get_destination();
 
-        // Save out our markup
-        $markup = $block_render;
+  if (!isset($result[$destination])) {
+    $result[$destination] = array();
+    $parts = explode('/', $destination);
+
+    if ($parts[0] == 'blockframe' && $parts[1] == 'block') {
+      $block = block_load($parts[2], $parts[3]);
+      if (isset($block->delta)) {
+        $result[$destination] = _block_get_renderable_array(_block_render_blocks(array($block)));
       }
     }
   }
 
-  return $markup;
+  return $result[$destination];
 }
