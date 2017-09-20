@@ -11,7 +11,7 @@
 
 function blockframe_page_alter(&$page) {
   // Only for block requests.
-  if (_blockframe_is_block_request()) {
+  if (_blockframe_is_blockframe_request()) {
     // Grab out block
     $block = _blockframe_get_block_request();
 
@@ -26,7 +26,7 @@ function blockframe_page_alter(&$page) {
 
 function blockframe_js_alter(&$javascript) {
   // Only for block requests.
-  if (_blockframe_is_block_request()) {
+  if (_blockframe_is_blockframe_request()) {
     $blacklist = array(
       'impliedConsent'
     );
@@ -64,7 +64,7 @@ function blockframe_theme($existing, $type, $theme, $path) {
 
 function blockframe_preprocess_page(&$vars, $hook) {
   //Add a static template suggestion only for block requests.
-  if (_blockframe_is_block_request()) {
+  if (_blockframe_is_blockframe_request()) {
     $vars['theme_hook_suggestions'][] = "page__type__iframe";
   }
 }
@@ -72,19 +72,20 @@ function blockframe_preprocess_page(&$vars, $hook) {
 /**
  * Determines whether a request should return a blockframe.
  */
-function _blockframe_is_block_request() {
-  $result = &drupal_static(__FUNCTION__);
+function _blockframe_is_blockframe_request() {
+  // Get the query string.
+  $query_string = drupal_get_query_parameters();
 
-  if (!isset($result)) {
-    $result = FALSE;
-
-    // The current request must have '?iframe' in the query string.
-    if (isset($_GET['iframe']) && _blockframe_get_block_request()) {
-      $result = TRUE;
-    }
+  // Check if there is a destination.
+  if (!isset($query_string['destination'])) {
+    return;
   }
 
-  return $result;
+  // Check if the destination should be resolved by this module.
+  $destination = $query_string['destination'];
+  if (substr($destination, 0, 11) == 'blockframe/' && _blockframe_get_block_request()) {
+    return TRUE;
+  }
 }
 
 /**
@@ -92,10 +93,10 @@ function _blockframe_is_block_request() {
  */
 function _blockframe_get_block_request() {
   $markup = &drupal_static(__FUNCTION__);
-
   // Run only if it hasn't been fetched before
   if (!isset($markup) && isset($_GET['destination'])) {
     $markup = FALSE;
+//var_dump($_GET);
 
     // Grab the URL and try to load a block
     $query = $_GET['destination'];
