@@ -31,7 +31,7 @@ function blockframe_js_alter(&$javascript) {
       'impliedConsent'
     );
 
-    // Unsetting JS we definately won't need.
+    // Un-setting JS we definitely won't need.
     foreach ($javascript as $key => $value) {
       foreach ($blacklist as $filter) {
         // Either by exact path or a contained value for inline scripts.
@@ -88,7 +88,7 @@ function _blockframe_is_block_request() {
 }
 
 /**
- * Healper function to (hopefully) grab the block in a clean way.
+ * Helper function to (hopefully) grab the block in a clean way.
  */
 function _blockframe_get_block_request() {
   $markup = &drupal_static(__FUNCTION__);
