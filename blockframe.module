@@ -6,18 +6,47 @@
  */
 
 /**
+ * hook_menu().
+ */
+function blockframe_menu() {
+  $items['blockframe'] = array(
+    'page callback' => 'blockframe_output',
+    'type' => MENU_CALLBACK,
+    'page arguments' => array(1, 2),
+    'access arguments' => array('access content'),
+  );
+
+  return $items;
+}
+
+/**
+ * Menu callback for blockframe.
+ */
+function blockframe_output($module, $delta) {
+  // Page was accessed via menu router, save the flag to be used later.
+  _blockframe_is_blockframe_request(TRUE);
+
+  // Render the block.
+  return render(_blockframe_get_block($module, $delta));
+}
+
+/**
  * hook_page_alter().
  */
 function blockframe_page_alter(&$page) {
   if (_blockframe_is_blockframe_request()) {
-    $page['content'] = _blockframe_get_block();
+    // Keep only the block on the page.
+    $page = array(
+      '#theme' => 'page',
+      '#type' => 'page',
+      'content' => $page['content']
+    );
   }
 }
 
 /**
  * hook_js_alter().
  */
-
 function blockframe_js_alter(&$javascript) {
   // Only for block requests.
   if (_blockframe_is_blockframe_request()) {
@@ -42,7 +71,6 @@ function blockframe_js_alter(&$javascript) {
 /**
  * hook_theme().
  */
-
 function blockframe_theme($existing, $type, $theme, $path) {
   $themes['page__type__iframe'] = array(
     'template' => 'page--type--iframe',
@@ -57,7 +85,7 @@ function blockframe_theme($existing, $type, $theme, $path) {
  */
 
 function blockframe_preprocess_page(&$vars, $hook) {
-  //Add a static template suggestion only for block requests.
+  // Add a static template suggestion only for block requests.
   if (_blockframe_is_blockframe_request()) {
     $vars['theme_hook_suggestions'][] = "page__type__iframe";
   }
@@ -66,30 +94,20 @@ function blockframe_preprocess_page(&$vars, $hook) {
 /**
  * Determines whether a request should return a blockframe.
  *
+ * @param
+ *   $value TRUE or NULL.
+ *
  * @return boolean
  *    True if it is a blockframe request. Otherwise NULL.
  */
-function _blockframe_is_blockframe_request() {
-  $destination = _blockframe_get_destination();
-  if (substr($destination, 0, 11) == 'blockframe/') {
-    return TRUE;
-  }
-}
+function _blockframe_is_blockframe_request($value = NULL) {
+  static $is_blockframe_request;
 
-/**
- * Gets the iframe destination.
- *
- * @return string
- *    The destination.
- */
-function _blockframe_get_destination() {
-  // Get the query string.
-  $query_string = drupal_get_query_parameters();
-  if (!isset($query_string['destination'])) {
-    return '';
+  if (isset($value)) {
+    $is_blockframe_request = $value;
   }
 
-  return check_plain($query_string['destination']);
+  return $is_blockframe_request;
 }
 
 /**
@@ -102,22 +120,19 @@ function _blockframe_get_destination() {
  *   Rendereable array for the block requested.
  *   Null if the block cannot be found.
  */
-function _blockframe_get_block() {
+function _blockframe_get_block($module, $delta) {
   static $result;
 
-  $destination = _blockframe_get_destination();
+  $key = $module . $delta;
 
-  if (!isset($result[$destination])) {
-    $result[$destination] = array();
-    $parts = explode('/', $destination);
+  if (!isset($result[$key])) {
+    $result[$key] = array();
 
-    if ($parts[0] == 'blockframe' && $parts[1] == 'block') {
-      $block = block_load($parts[2], $parts[3]);
-      if (isset($block->delta)) {
-        $result[$destination] = _block_get_renderable_array(_block_render_blocks(array($block)));
-      }
+    $block = block_load($module, $delta);
+    if (isset($block->delta)) {
+      $result[$key] = _block_get_renderable_array(_block_render_blocks(array($block)));
     }
   }
 
-  return $result[$destination];
+  return $result[$key];
 }
