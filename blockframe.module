@@ -136,3 +136,18 @@ function _blockframe_get_block($module, $delta) {
 
   return $result[$key];
 }
+
+/**
+ * Implements hook_wysiwyg_widget_embed_alter().
+ */
+function blockframe_wysiwyg_widget_embed_alter(&$placeholders) {
+  $placeholders['iframe_block'] = array(
+    'regex' => array(
+      'pattern' => 'blockframe',
+      'flags' => 'gi',
+    ),
+    'icon_markup' => '<img class="wysiwyg-widget-embed-img" title="Iframe Block" ' .
+      'src="/' . drupal_get_path('module', 'blockframe') .
+      '/images/iframe.jpeg" />',
+  );
+}
